@@ -103,6 +103,7 @@ func main() {
 		"field_1_string":     "random text",
 		"field_2_string":     "another random text",
 	})
+	
 	if err != nil {
 		log.Fatal(err)
 	}
