@@ -1,0 +1,76 @@
+{
+  "containerDefinitions": [
+    {
+      "command": [
+        "/neocrm-api",
+        "webworker",
+        "--http-addr",
+        ":8081"
+      ],
+      "entryPoint": null,
+      "environment": [
+        {"name": "AWS_XRAY_CONTEXT_MISSING", "value": "LOG_ERROR"},
+        {"name": "HONEYBADGER_ENV", "value": "production"}
+      ],
+      "essential": true,
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl http://127.0.0.1:8081/health_check || exit 1"
+        ]
+      },
+      "image": "<IMAGE>",
+      "linuxParameters": {
+        "initProcessEnabled": true
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/aws/ecs/dxhub",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "neocrm-api"
+        }
+      },
+      "name": "neocrm-api",
+      "memoryReservation": 128,
+      "portMappings": [
+        {"protocol": "tcp", "containerPort": 8081}
+      ],
+      "secrets": [
+        {"name": "DATABASE_AWS_DYNAMODB_INSTANCE_TABLE", "valueFrom": "arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/DATABASE_AWS_DYNAMODB_INSTANCE_TABLE"},
+        {"name": "HONEYBADGER_API_KEY", "valueFrom": "arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/HONEYBADGER_API_KEY"},
+        {"name": "JR_API_URL", "valueFrom": "arn:aws:ssm:eu-west-2:012615398682:parameter/dxhub/JR_API_URL"}
+      ]
+    },
+    {
+      "name": "xray-daemon",
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "/xray --version || exit 1"
+        ]
+      },
+      "image": "amazon/aws-xray-daemon",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/aws/ecs/dxhub",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "xray"
+        }
+      },
+      "cpu": 32,
+      "memoryReservation": 128,
+      "portMappings" : [
+        {"protocol": "udp", "containerPort": 2000}
+      ]
+    }
+  ],
+  "cpu": "512",
+  "executionRoleArn": "arn:aws:iam::012615398682:role/dxhub-service-task-execution-role",
+  "family": "dxhub-neocrm-api",
+  "memory": "1024",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "taskRoleArn": "arn:aws:iam::012615398682:role/dxhub-neocrm-api-ecs-task-role"
+}

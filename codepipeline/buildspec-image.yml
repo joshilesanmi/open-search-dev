@@ -1,0 +1,67 @@
+# version: 0.2
+
+# env:
+#   parameter-store:
+#     DOCKER_HUB_LOGIN: "/dxhub/CodeBuild/DOCKER_HUB_LOGIN"
+#     DOCKER_HUB_PASSWORD: "/dxhub/CodeBuild/DOCKER_HUB_PASSWORD"
+
+# phases:
+#   install:
+#     runtime-versions:
+#       docker: 20
+#   build:
+#     commands:
+#       - echo Building image for git commit ${CODEBUILD_RESOLVED_SOURCE_VERSION}
+#       - echo ${DOCKER_HUB_PASSWORD} | docker login --username ${DOCKER_HUB_LOGIN} --password-stdin
+#       - $(aws ecr get-login --no-include-email --region eu-central-1)
+#       - |
+#         docker pull 115379056088.dkr.ecr.eu-central-1.amazonaws.com/dxhub-neocrm-api:latest &&
+#           docker build --build-arg GIT_COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION} --cache-from 115379056088.dkr.ecr.eu-central-1.amazonaws.com/dxhub-neocrm-api:latest -t dxhub-neocrm-api:latest -f neocrm-api/codepipeline/Dockerfile.app . ||
+#           docker build --build-arg GIT_COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION} -t dxhub-neocrm-api:latest -f neocrm-api/codepipeline/Dockerfile.app .
+#       - docker tag dxhub-neocrm-api:latest 115379056088.dkr.ecr.eu-central-1.amazonaws.com/dxhub-neocrm-api:latest
+#       - docker tag dxhub-neocrm-api:latest 115379056088.dkr.ecr.eu-central-1.amazonaws.com/dxhub-neocrm-api:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+#       - docker push 115379056088.dkr.ecr.eu-central-1.amazonaws.com/dxhub-neocrm-api:latest
+#       - docker push 115379056088.dkr.ecr.eu-central-1.amazonaws.com/dxhub-neocrm-api:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+#       - echo "{\"ImageURI\":\"115379056088.dkr.ecr.eu-central-1.amazonaws.com/dxhub-neocrm-api:${CODEBUILD_RESOLVED_SOURCE_VERSION}\"}" > imageDetail.json
+
+# artifacts:
+#   files:
+#     - neocrm-api/codepipeline/appspec.yaml
+#     - neocrm-api/codepipeline/taskdef.json
+#     - imageDetail.json
+#   discard-paths: yes
+
+version: 0.2
+
+env:
+  parameter-store:
+    ACCOUNT_ID: "/dxhub/ACCOUNT_ID"
+    REGION: "/dxhub/REGION"
+    DOCKER_HUB_LOGIN: "/dxhub/CodeBuild/DOCKER_HUB_LOGIN"
+    DOCKER_HUB_PASSWORD: "/dxhub/CodeBuild/DOCKER_HUB_PASSWORD"
+
+phases:
+  install:
+    runtime-versions:
+      docker: 20
+  build:
+    commands:
+      - echo Building image for git commit ${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - echo ${DOCKER_HUB_PASSWORD} | docker login --username ${DOCKER_HUB_LOGIN} --password-stdin
+      - $(aws ecr get-login --no-include-email --region ${REGION})
+      - |
+        docker pull ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/dxhub-neocrm-api:latest &&
+          docker build --build-arg GIT_COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION} --cache-from ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/dxhub-neocrm-api:latest -t dxhub-neocrm-api:latest -f neocrm-api/codepipeline/Dockerfile.app . ||
+          docker build --build-arg GIT_COMMIT=${CODEBUILD_RESOLVED_SOURCE_VERSION} -t dxhub-neocrm-api:latest -f neocrm-api/codepipeline/Dockerfile.app .
+      - docker tag dxhub-neocrm-api:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/dxhub-neocrm-api:latest
+      - docker tag dxhub-neocrm-api:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/dxhub-neocrm-api:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/dxhub-neocrm-api:latest
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/dxhub-neocrm-api:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - echo "{\"ImageURI\":\"${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/dxhub-neocrm-api:${CODEBUILD_RESOLVED_SOURCE_VERSION}\"}" > imageDetail.json
+
+artifacts:
+  files:
+    - neocrm-api/codepipeline/appspec.yaml
+    - neocrm-api/codepipeline/taskdef.json
+    - imageDetail.json
+  discard-paths: yes 
